@@ -750,6 +750,9 @@ def main():
     if not token:
         raise ValueError("BOT_TOKEN environment variable not set!")
 
+    import pytz
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
     app = Application.builder().token(token).build()
 
     # ConversationHandler
@@ -813,13 +816,16 @@ def main():
 
     # Job Queue - har kuni eslatma va backup
     job_queue = app.job_queue
-    # Har kuni soat 09:00 da eslatma
-    job_queue.run_daily(send_reminders, time=datetime.strptime("09:00", "%H:%M").time())
-    # Har kuni soat 23:00 da backup
-    job_queue.run_daily(daily_backup, time=datetime.strptime("23:00", "%H:%M").time())
+    if job_queue:
+        import pytz
+        tz = pytz.timezone("Asia/Tashkent")
+        # Har kuni soat 09:00 da eslatma
+        job_queue.run_daily(send_reminders, time=datetime.strptime("09:00", "%H:%M").time(), tzinfo=tz)
+        # Har kuni soat 23:00 da backup
+        job_queue.run_daily(daily_backup, time=datetime.strptime("23:00", "%H:%M").time(), tzinfo=tz)
 
     logger.info("Bot ishga tushdi!")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
